@@ -9,8 +9,7 @@ import {
   onAuthStateChanged,
   signOut,
 } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDoc, 
-  setDoc, deleteDoc, doc,getDocs,updateDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDoc, setDoc, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 
 const FirebaseContext = createContext(null);
 
@@ -60,7 +59,7 @@ export const FirebaseProvider = (props) => {
 
   const listAllUsers = async () => {
     try {
-      const querySnapshot = await getDoc(collection(firestore, "users"));
+      const querySnapshot = await getDocs(collection(firestore, "users"));
       const users = querySnapshot.docs.map((doc) => ({
         uid: doc.id,
         ...doc.data(),
@@ -126,7 +125,7 @@ export const FirebaseProvider = (props) => {
       // Check if the user exists in Firestore
       const userDoc = await getDoc(userRef);
       
-      // If the user doesn't exist, add them to the Firestore
+      // If the user doesn't exist, add them to Firestore
       if (!userDoc.exists()) {
         await setDoc(userRef, {
           uid: user.uid,
@@ -137,9 +136,6 @@ export const FirebaseProvider = (props) => {
       } else {
         console.log('User already exists in Firestore');
       }
-      
-      // Optionally, handle user session, authentication state, etc.
-  
     } catch (error) {
       console.error("Error signing in with Google:", error);
       throw error;
