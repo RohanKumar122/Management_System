@@ -47,6 +47,25 @@ export const FirebaseProvider = (props) => {
     return () => unsubscribe();
   }, []);
 
+
+  useEffect(() => {
+    // This will check if there's a pending redirect result
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(firebaseAuth);
+        if (result) {
+          // User signed in successfully via redirect
+          const user = result.user;
+          await handleUser(user);
+        }
+      } catch (error) {
+        console.error("Error handling redirect result:", error);
+      }
+    };
+  
+    checkRedirectResult();
+  }, []);
+    
   // Set user privileges
   const setAdminPrivilege = async (uid, isAdmin) => {
     try {
@@ -144,6 +163,8 @@ export const FirebaseProvider = (props) => {
       throw error;
     }
   };
+
+
 
   const handleUser = async (user) => {
     const userRef = doc(firestore, "users", user.uid);
