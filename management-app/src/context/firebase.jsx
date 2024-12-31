@@ -91,28 +91,59 @@ export const FirebaseProvider = (props) => {
 
   const signupUserWithEmailAndPassword = async (email, password) => {
     try {
+      // Attempt to create a new user
       const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       const uid = userCredential.user.uid;
-      // Optionally, you can set the user as regular or admin in Firestore
+  
+      // Optionally, set the user as regular or admin in Firestore
       await addUser({
         uid,
         email,
         isAdmin: false, // Default to non-admin
       });
+  
+      console.log("User registered successfully");
     } catch (error) {
       console.error("Error signing up:", error);
-      throw error; // Propagate the error for the component to handle
-    }
-  };
-
-  const loginWithEmailAndPassword = async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(firebaseAuth, email, password);
-    } catch (error) {
-      console.error("Error logging in:", error);
+  
+      // Check if the error is that the email is already in use
+      if (error.code === "auth/email-already-in-use") {
+        // Instead of throwing an error, auto-login the user with the existing email
+        await loginWithEmailAndPassword(email, password); // Attempt login instead of registration
+        console.log("User already registered, logging in...");
+        return; // Exit the signup flow
+      }
+  
+      // Propagate other errors for handling in the component
       throw error;
     }
   };
+  
+
+  const loginWithEmailAndPassword = async (email, password) => {
+    try {
+      // Trim any unwanted spaces from email and password
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+  
+      // Log email and password to check if they're correctly passed
+      console.log("Attempting login with email:", trimmedEmail);
+  
+      // Check if email and password are empty
+      if (!trimmedEmail || !trimmedPassword) {
+        throw new Error("Email and password must not be empty.");
+      }
+  
+      // Sign in with email and password
+      await signInWithEmailAndPassword(firebaseAuth, trimmedEmail, trimmedPassword);
+      console.log("Login successful");
+    } catch (error) {
+      // Log the full error message for debugging
+      console.error("Login error:", error);
+      throw error; // Propagate the error for the component to handle
+    }
+  };
+  
 
   const signinWithGoogle = async () => {
     try {

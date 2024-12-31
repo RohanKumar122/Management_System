@@ -17,20 +17,40 @@ const RegisterForm = () => {
   }, [firebase, firebase?.isLoggedIn, navigate]);
 
   const handleRegister = async (e) => {
-    e.preventDefault(); // Prevent form submission's default behavior
+    e.preventDefault(); // Prevent default form submission
     setLoading(true);
+  
     try {
-      console.log("Signing up...");
+      console.log("Registering user...");
+  
+      // Validate inputs
+      if (!username || !password) {
+        alert("Please fill in both username and password.");
+        return;
+      }
+  
+      // Attempt to sign up the user
       await firebase.signupUserWithEmailAndPassword(username, password);
       console.log("Registration successful");
-      navigate("/"); // Redirect to home after successful registration
+  
+      // Optionally, you can redirect the user after successful registration or login
+      navigate("/"); // Redirect to home page after registration or login
     } catch (error) {
       console.error("Error registering user:", error);
-      alert("Registration failed. Please try again.");
+  
+      // Handle specific error cases like email already in use
+      if (error.message.includes("email-already-in-use")) {
+        alert("This email is already registered. You will be logged in instead.");
+        // Optional: Navigate to login page after the error
+        navigate("/login"); // Redirect to login page
+      } else {
+        alert("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">

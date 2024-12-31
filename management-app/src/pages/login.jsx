@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { useFirebase } from "../context/firebase";
 import { useNavigate } from "react-router-dom";
+import { useFirebase } from "../context/firebase";
 
 const LoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const firebase = useFirebase();
+  const firebase = useFirebase(); // Get firebase context
   const navigate = useNavigate();
 
+  // Redirect to home if already logged in
   useEffect(() => {
     if (firebase.user) {
-      navigate("/"); // Redirect to home if already logged in
+      navigate("/"); // Redirect to home if user is logged in
     }
-  }, [firebase.user, navigate]); // Change to firebase.user
+  }, [firebase.user, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault(); // Prevent default form submission
     setLoading(true);
+  
     try {
       console.log("Signing in...");
+      
+      // Validate inputs
+      if (!username || !password) {
+        alert("Please fill in both username and password.");
+        return;
+      }
+  
+      // Attempt to log in
       await firebase.loginWithEmailAndPassword(username, password);
       console.log("Login successful");
-      navigate("/"); // Redirect to home after login
+      navigate("/"); // Redirect to home after successful login
     } catch (error) {
       console.error("Login error:", error);
       alert("Login failed. Please check your credentials and try again.");
@@ -30,15 +40,13 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
-
   const handleGoogleSignIn = async () => {
     try {
       // Sign in with Google
       const result = await firebase.signinWithGoogle();
-      
       // If the sign-in is successful, navigate to home
       if (result) {
-        navigate("/"); // Redirect to home
+        navigate("/"); // Redirect to home after successful login
       }
     } catch (error) {
       // Only show the error if there's a failure
@@ -46,7 +54,6 @@ const LoginForm = () => {
       alert("Google sign-in failed. Please try again.");
     }
   };
-  
 
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
