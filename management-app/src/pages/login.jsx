@@ -15,46 +15,47 @@ const LoginForm = () => {
       navigate("/"); // Redirect to home if user is logged in
     }
   }, [firebase.user, navigate]);
-
+  
   const handleLogin = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     setLoading(true);
   
     try {
-      console.log("Signing in...");
-      
-      // Validate inputs
       if (!username || !password) {
         alert("Please fill in both username and password.");
         return;
       }
   
-      // Attempt to log in
       await firebase.loginWithEmailAndPassword(username, password);
       console.log("Login successful");
       navigate("/"); // Redirect to home after successful login
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login failed. Please check your credentials and try again.");
+      if (error.code === "auth/wrong-password") {
+        alert("Invalid password. Please try again.");
+      } else if (error.code === "auth/user-not-found") {
+        alert("No user found with this email.");
+      } else {
+        alert("Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
+  
   const handleGoogleSignIn = async () => {
     try {
-      // Sign in with Google
-      const result = await firebase.signinWithGoogle();
-      // If the sign-in is successful, navigate to home
-      if (result) {
-        navigate("/"); // Redirect to home after successful login
-      }
+      setLoading(true);
+      await firebase.signinWithGoogle(); // This triggers the sign-in process
+      console.log("Google sign-in initiated.");
     } catch (error) {
-      // Only show the error if there's a failure
       console.error("Error signing in with Google:", error);
       alert("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
       <h2 className="text-2xl font-semibold text-center mb-4">Login</h2>
@@ -85,11 +86,13 @@ const LoginForm = () => {
       </form>
       <h1 className="text-center my-4">OR</h1>
       <button
-        onClick={handleGoogleSignIn}
-        className="w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
-      >
-        Sign in with Google
-      </button>
+  onClick={handleGoogleSignIn}
+  className={`w-full py-2 ${loading ? "bg-gray-400" : "bg-red-500"} text-white rounded hover:bg-red-600`}
+  disabled={loading}
+>
+  {loading ? "Signing in with Google..." : "Sign in with Google"}
+</button>
+
     </div>
   );
 };

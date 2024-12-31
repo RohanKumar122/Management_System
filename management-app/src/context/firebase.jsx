@@ -42,29 +42,53 @@ export const FirebaseProvider = (props) => {
   // Monitor auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
-      setUser(currentUser || null);
+      if (currentUser) {
+        console.log("User is signed in:", currentUser);
+        setUser(currentUser); // Update state
+      } else {
+        console.log("No user is signed in.");
+        setUser(null); // Clear state
+      }
     });
-    return () => unsubscribe();
+  
+    return () => unsubscribe(); // Cleanup subscription
   }, []);
-
-
+  
   useEffect(() => {
-    // This will check if there's a pending redirect result
-    const checkRedirectResult = async () => {
+    const handleRedirect = async () => {
       try {
         const result = await getRedirectResult(firebaseAuth);
-        if (result) {
-          // User signed in successfully via redirect
-          const user = result.user;
-          await handleUser(user);
+        if (result && result.user) {
+          console.log("Redirect sign-in successful:", result.user);
+          setUser(result.user);
         }
       } catch (error) {
         console.error("Error handling redirect result:", error);
       }
     };
   
+    handleRedirect();
+  }, []);
+
+
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(firebaseAuth);
+        if (result && result.user) {
+          console.log("Redirect login successful:", result.user);
+          await handleUser(result.user); // Save user to Firestore
+        }
+      } catch (error) {
+        console.error("Error handling redirect result:", error);
+      }
+    };
+  
+    // Check redirect result only once when the component mounts
     checkRedirectResult();
   }, []);
+  
+  
     
   // Set user privileges
   const setAdminPrivilege = async (uid, isAdmin) => {
@@ -147,16 +171,11 @@ export const FirebaseProvider = (props) => {
       if (isMobile) {
         // Use redirect on mobile
         await signInWithRedirect(firebaseAuth, googleProvider);
-        const result = await getRedirectResult(firebaseAuth); // Get result after redirect
-        if (result) {
-          const user = result.user;
-          await handleUser(user);
-        }
       } else {
         // Use popup on non-mobile devices
         const result = await signInWithPopup(firebaseAuth, googleProvider);
         const user = result.user;
-        await handleUser(user);
+        await handleUser(user); // Ensure user is handled after sign-in
       }
     } catch (error) {
       console.error("Error signing in with Google:", error);
@@ -166,17 +185,27 @@ export const FirebaseProvider = (props) => {
 
 
 
+
   const handleUser = async (user) => {
-    const userRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) {
-      await setDoc(userRef, { uid: user.uid, email: user.email, isAdmin: false }); // Default to non-admin
-      console.log('User added to Firestore');
-    } else {
-      console.log('User already exists in Firestore');
+    try {
+      const userRef = doc(firestore, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+  
+      if (!userDoc.exists()) {
+        await setDoc(userRef, { 
+          uid: user.uid, 
+          email: user.email, 
+          isAdmin: false 
+        });
+        console.log('User added to Firestore');
+      } else {
+        console.log('User already exists in Firestore');
+      }
+    } catch (error) {
+      console.error("Error handling user:", error);
     }
   };
-
+  
   // Logout
   const logout = async () => {
     try {
