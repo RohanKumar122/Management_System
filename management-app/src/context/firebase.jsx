@@ -21,6 +21,7 @@ import {
   doc,
   getDocs,
   updateDoc,
+  
 } from "firebase/firestore";
 import { getMessaging,getToken, onMessage } from "firebase/messaging";
 
@@ -45,6 +46,7 @@ const firestore = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 const messaging = getMessaging();
 export { messaging, getToken, onMessage };
+export {firestore}
 
 // Detect mobile devices (simplified check)
 const isMobile = window.innerWidth <= 800;
@@ -112,6 +114,8 @@ export const FirebaseProvider = (props) => {
       console.error("Error setting admin:", error);
     }
   };
+
+  
 
   // List all users
   const listAllUsers = async () => {
@@ -253,6 +257,22 @@ export const FirebaseProvider = (props) => {
     }
   };
 
+
+  // Function to update the FCM token in Firestore
+const updateFCMToken = async (token) => {
+  try {
+    if (firestore.user?.email && token) {
+      const userRef = doc(firestore, "users", firestore.user.email); // Get the document reference using email
+      await updateDoc(userRef, {
+        fcmToken: token, // Update the fcmToken field
+      });
+      console.log("FCM Token updated in Firestore");
+    }
+  } catch (error) {
+    console.error("Error updating FCM token in Firestore:", error);
+  }
+};
+
   // List all books
   const listAllBooks = async () => {
     const querySnapshot = await getDocs(collection(firestore, "books"));
@@ -277,6 +297,7 @@ export const FirebaseProvider = (props) => {
         listAllBooks,
         setAdminPrivilege,
         listAllUsers,
+        updateFCMToken,
         messaging
       }}
     >

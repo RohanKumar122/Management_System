@@ -71,10 +71,11 @@ const AdminRoute = () => {
     }
   };
 
+  
   // Handle setting a user as admin
-  const handleSetAsAdmin = async (uid) => {
+  const handleSetAsAdmin = async (email) => {
     try {
-      await firebase.setUserAdmin(uid, true);
+      await firebase.setUserAdmin(email, true);
       const fetchedUsers = await firebase.listAllUsers(); // Re-fetch users
       setUsers(fetchedUsers);
     } catch (error) {
@@ -92,6 +93,8 @@ const AdminRoute = () => {
       console.error("Error removing admin:", error);
     }
   };
+
+  
 
   return (
     <div className="container mx-auto p-6">

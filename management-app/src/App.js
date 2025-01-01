@@ -10,6 +10,7 @@ import React from 'react';
 import { FirebaseProvider } from './context/firebase'; // Import the FirebaseProvider
 import { onMessage, getToken, messaging } from './context/firebase';
 import { getMessaging } from "firebase/messaging";
+import SendNotification from './pages/SendNotification';
 
 // Service worker registration
 if ("serviceWorker" in navigator) {
@@ -38,6 +39,8 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/sendNotification" element={<SendNotification />} />
+
           <Route path="/listBooks" element={<ItemListing />} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />

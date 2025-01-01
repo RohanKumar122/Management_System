@@ -2,23 +2,38 @@ import React, { useEffect, useState } from "react";
 import { useFirebase } from "../context/firebase";
 import { messaging } from "../context/firebase";
 import { getToken } from "firebase/messaging";
+import { firestore } from "../context/firebase"; // Correct import for Firestore
+import { doc, setDoc } from "firebase/firestore"; // Use setDoc to create or update the document
 
 const Home = () => {
   const firebase = useFirebase();
   const [books, setBooks] = useState([]);
   const [token, setToken] = useState(""); // State to store the FCM token
 
+  // Request notification permission and get the FCM token
   async function requestPermission() {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       console.log("Permission granted");
       try {
-        // Generate token
+        // Generate FCM token
         const generatedToken = await getToken(messaging, {
-          vapidKey: "BL9ZzEEh7gnC2dapiQbPVDixtZ9BKyEp_kEM6vEevXn8n7NYTS9kzjq2xfpFY3jKKDXNdPiBdnkT0pNFTbYLPwU",
+          vapidKey: "BL9ZzEEh7gnC2dapiQbPVDixtZ9BKyEp_kEM6vEevXn8n7NYTS9kzjq2xfpFY3jKKDXNdPiBdnkT0pNFTbYLPwU", // VAPID Key
         });
         console.log("Token:", generatedToken);
         setToken(generatedToken); // Update the token state
+
+        // Save token and user details to Firestore
+        if (firebase?.user?.email && generatedToken) {
+          const userRef = doc(firestore, "tokens", firebase.user.email); // Correct Firestore doc reference
+          await setDoc(userRef, {
+            fcmToken: generatedToken,
+            email: firebase.user.email,
+            isAdmin: firebase.user?.isAdmin || false,
+            uid: firebase.user?.uid,
+          }, { merge: true }); // Use merge: true to merge with existing data, if any
+          console.log("FCM Token and user data saved to Firestore");
+        }
       } catch (error) {
         console.error("Error generating token:", error);
       }
@@ -27,10 +42,12 @@ const Home = () => {
     }
   }
 
+  // Run permission request on component mount
   useEffect(() => {
     requestPermission();
   }, []);
 
+  // Fetch books if logged in
   useEffect(() => {
     if (firebase && firebase.isLoggedIn) {
       const fetchBooks = async () => {
@@ -52,6 +69,7 @@ const Home = () => {
     }
   }, [firebase]);
 
+  // Copy token to clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(token).then(() => {
       alert("Token copied to clipboard!");
