@@ -8,7 +8,28 @@ import AdminRoute from './pages/AdminRoute';
 import Header from './pages/Header'; // Ensure this import path is correct
 import React from 'react';
 import { FirebaseProvider } from './context/firebase'; // Import the FirebaseProvider
+import { onMessage, getToken, messaging } from './context/firebase';
+import { getMessaging } from "firebase/messaging";
 
+// Service worker registration
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/firebase-messaging-sw.js")
+    .then((registration) => {
+      console.log("Service Worker registered with scope:", registration.scope);
+      const messaging = getMessaging();
+      messaging.useServiceWorker(registration);
+    })
+    .catch((err) => {
+      console.error("Service Worker registration failed:", err);
+    });
+}
+
+onMessage(messaging, (payload) => {
+  console.log("Foreground notification received:", payload);
+  // Optionally show a custom UI notification
+  alert(`Notification: ${payload.notification.title}`);
+});
 function App() {
  
   return (

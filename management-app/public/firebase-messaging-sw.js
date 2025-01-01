@@ -4,7 +4,6 @@ importScripts(
 importScripts(
   "https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"
 );
-
 console.log("Service Worker: Loaded");
 
 const firebaseConfig = {
@@ -18,23 +17,21 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-console.log("Service Worker: Firebase Initialized");
 
 const messaging = firebase.messaging();
 
+// Background message handler
 messaging.onBackgroundMessage((payload) => {
-  console.log("Service Worker: Received background message:", payload);
+  console.log("Service Worker: Received background message", payload);
 
   const { title, body, icon } = payload.notification || {};
   if (title && body) {
-    const notificationOptions = {
+    console.log("Service Worker: Showing notification", { title, body });
+    self.registration.showNotification(title, {
       body,
       icon: icon || "/default-icon.png",
-    };
-
-    console.log("Service Worker: Showing notification");
-    self.registration.showNotification(title, notificationOptions);
+    });
   } else {
-    console.error("Service Worker: Missing notification details:", payload);
+    console.error("Service Worker: Missing notification details", payload);
   }
 });

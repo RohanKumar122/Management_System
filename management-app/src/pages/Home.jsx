@@ -6,38 +6,41 @@ import { getToken } from "firebase/messaging";
 const Home = () => {
   const firebase = useFirebase();
   const [books, setBooks] = useState([]);
+  const [token, setToken] = useState(""); // State to store the FCM token
 
-  async function requestPermission(){
-    const permission =await Notification.requestPermission();
-    if(permission === "granted"){
+  async function requestPermission() {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
       console.log("Permission granted");
-      // generate token
-      const token = await getToken(messaging,{vapidKey :"BL9ZzEEh7gnC2dapiQbPVDixtZ9BKyEp_kEM6vEevXn8n7NYTS9kzjq2xfpFY3jKKDXNdPiBdnkT0pNFTbYLPwU"})
-      console.log("Token : ",token);
-
-    }
-    else if(permission === "denied"){
+      try {
+        // Generate token
+        const generatedToken = await getToken(messaging, {
+          vapidKey: "BL9ZzEEh7gnC2dapiQbPVDixtZ9BKyEp_kEM6vEevXn8n7NYTS9kzjq2xfpFY3jKKDXNdPiBdnkT0pNFTbYLPwU",
+        });
+        console.log("Token:", generatedToken);
+        setToken(generatedToken); // Update the token state
+      } catch (error) {
+        console.error("Error generating token:", error);
+      }
+    } else if (permission === "denied") {
       console.log("Permission denied");
     }
   }
 
-  // messaging
-  useEffect(()=>{
+  useEffect(() => {
     requestPermission();
-  }) 
- 
+  }, []);
 
   useEffect(() => {
-    // Check if firebase and firebase.user are properly initialized
     if (firebase && firebase.isLoggedIn) {
       const fetchBooks = async () => {
         try {
           const allBooks = await firebase.listAllBooks();
           const userBooks = allBooks.docs
             .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .filter((book) => book.userId === firebase.user?.uid); // Filter books by logged-in user's ID
+            .filter((book) => book.userId === firebase.user?.uid);
           console.log(userBooks);
-          setBooks(userBooks); // Update the books state
+          setBooks(userBooks);
         } catch (error) {
           console.error("Error fetching books:", error);
         }
@@ -45,9 +48,15 @@ const Home = () => {
 
       fetchBooks();
     } else {
-      setBooks([]); // Clear books if not logged in or firebase is not initialized
+      setBooks([]);
     }
-  }, [firebase]); // Add firebase as a dependency to handle updates to logged-in state
+  }, [firebase]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(token).then(() => {
+      alert("Token copied to clipboard!");
+    });
+  };
 
   return (
     <div>
@@ -74,6 +83,23 @@ const Home = () => {
           ))
         ) : (
           <p className="mx-auto text-gray-500">No books found.</p>
+        )}
+      </div>
+
+      <div className="mt-8 p-4 text-center">
+        <h2 className="text-lg font-bold">FCM Token</h2>
+        {token ? (
+          <div className="mt-2">
+            <p className="break-words bg-gray-100 p-4 rounded text-gray-800">{token}</p>
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              onClick={copyToClipboard}
+            >
+              Copy Token
+            </button>
+          </div>
+        ) : (
+          <p className="text-gray-500">Generating FCM Token...</p>
         )}
       </div>
     </div>
