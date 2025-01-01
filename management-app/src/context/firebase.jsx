@@ -11,9 +11,19 @@ import {
   onAuthStateChanged,
   signOut,
 } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDoc, setDoc, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+import { getMessaging,getToken, onMessage } from "firebase/messaging";
 
-// Firebase Context
 const FirebaseContext = createContext(null);
 
 const firebaseConfig = {
@@ -28,10 +38,13 @@ const firebaseConfig = {
 
 export const useFirebase = () => useContext(FirebaseContext);
 
+
 const firebaseApp = initializeApp(firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firestore = getFirestore(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
+const messaging = getMessaging();
+export { messaging, getToken, onMessage };
 
 // Detect mobile devices (simplified check)
 const isMobile = window.innerWidth <= 800;
@@ -50,10 +63,10 @@ export const FirebaseProvider = (props) => {
         setUser(null); // Clear state
       }
     });
-  
-    return () => unsubscribe(); // Cleanup subscription
+
+    return () => unsubscribe(); 
   }, []);
-  
+
   useEffect(() => {
     const handleRedirect = async () => {
       try {
@@ -66,10 +79,9 @@ export const FirebaseProvider = (props) => {
         console.error("Error handling redirect result:", error);
       }
     };
-  
+
     handleRedirect();
   }, []);
-
 
   useEffect(() => {
     const checkRedirectResult = async () => {
@@ -83,19 +95,19 @@ export const FirebaseProvider = (props) => {
         console.error("Error handling redirect result:", error);
       }
     };
-  
+
     // Check redirect result only once when the component mounts
     checkRedirectResult();
   }, []);
-  
-  
-    
+
   // Set user privileges
   const setAdminPrivilege = async (uid, isAdmin) => {
     try {
       const userRef = doc(firestore, "users", uid);
       await updateDoc(userRef, { isAdmin });
-      console.log(`User ${uid} is now ${isAdmin ? 'an admin' : 'a regular user'}`);
+      console.log(
+        `User ${uid} is now ${isAdmin ? "an admin" : "a regular user"}`
+      );
     } catch (error) {
       console.error("Error setting admin:", error);
     }
@@ -135,7 +147,11 @@ export const FirebaseProvider = (props) => {
   // Sign up a user with email and password
   const signupUserWithEmailAndPassword = async (email, password) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        email,
+        password
+      );
       const uid = userCredential.user.uid;
       await addUser({ uid, email, isAdmin: false }); // Default to non-admin
       console.log("User registered successfully");
@@ -156,8 +172,13 @@ export const FirebaseProvider = (props) => {
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
 
-      if (!trimmedEmail || !trimmedPassword) throw new Error("Email and password must not be empty.");
-      await signInWithEmailAndPassword(firebaseAuth, trimmedEmail, trimmedPassword);
+      if (!trimmedEmail || !trimmedPassword)
+        throw new Error("Email and password must not be empty.");
+      await signInWithEmailAndPassword(
+        firebaseAuth,
+        trimmedEmail,
+        trimmedPassword
+      );
       console.log("Login successful");
     } catch (error) {
       console.error("Login error:", error);
@@ -183,29 +204,26 @@ export const FirebaseProvider = (props) => {
     }
   };
 
-
-
-
   const handleUser = async (user) => {
     try {
       const userRef = doc(firestore, "users", user.uid);
       const userDoc = await getDoc(userRef);
-  
+
       if (!userDoc.exists()) {
-        await setDoc(userRef, { 
-          uid: user.uid, 
-          email: user.email, 
-          isAdmin: false 
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          isAdmin: false,
         });
-        console.log('User added to Firestore');
+        console.log("User added to Firestore");
       } else {
-        console.log('User already exists in Firestore');
+        console.log("User already exists in Firestore");
       }
     } catch (error) {
       console.error("Error handling user:", error);
     }
   };
-  
+
   // Logout
   const logout = async () => {
     try {
@@ -259,6 +277,7 @@ export const FirebaseProvider = (props) => {
         listAllBooks,
         setAdminPrivilege,
         listAllUsers,
+        messaging
       }}
     >
       {props.children}

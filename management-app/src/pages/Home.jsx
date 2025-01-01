@@ -1,9 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { useFirebase } from "../context/firebase";
+import { messaging } from "../context/firebase";
+import { getToken } from "firebase/messaging";
 
 const Home = () => {
   const firebase = useFirebase();
   const [books, setBooks] = useState([]);
+
+  async function requestPermission(){
+    const permission =await Notification.requestPermission();
+    if(permission === "granted"){
+      console.log("Permission granted");
+      // generate token
+      const token = await getToken(messaging,{vapidKey :"BL9ZzEEh7gnC2dapiQbPVDixtZ9BKyEp_kEM6vEevXn8n7NYTS9kzjq2xfpFY3jKKDXNdPiBdnkT0pNFTbYLPwU"})
+      console.log("Token : ",token);
+
+    }
+    else if(permission === "denied"){
+      console.log("Permission denied");
+    }
+  }
+
+  // messaging
+  useEffect(()=>{
+    requestPermission();
+  }) 
+ 
 
   useEffect(() => {
     // Check if firebase and firebase.user are properly initialized

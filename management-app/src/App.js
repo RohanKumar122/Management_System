@@ -10,6 +10,7 @@ import React from 'react';
 import { FirebaseProvider } from './context/firebase'; // Import the FirebaseProvider
 
 function App() {
+ 
   return (
     <FirebaseProvider> {/* Wrap the app in FirebaseProvider */}
       <Router>
