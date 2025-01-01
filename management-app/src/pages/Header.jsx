@@ -6,12 +6,12 @@ const Header = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const firebase = useFirebase();
+
   const handleNavigation = (path) => {
     navigate(path);
     setIsMenuOpen(false);
   };
-
-  const firebase = useFirebase();
 
   const handleLogout = async () => {
     try {
@@ -62,6 +62,16 @@ const Header = () => {
             >
               Add Books
             </button>
+
+            {/* Admin Route (Visible only to specific email) */}
+            {firebase.user?.email === "rk399504@gmail.com" && (
+              <button
+                onClick={() => handleNavigation("/admin")}
+                className="block px-4 py-2 w-full text-left hover:bg-gray-100 text-blue-600"
+              >
+                Admin
+              </button>
+            )}
 
             {/* Show Login if user is not logged in */}
             {!firebase.user && (

@@ -1,38 +1,59 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFirebase } from "../context/firebase";
 
 const AdminRoute = () => {
   const firebase = useFirebase();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showModal, setShowModal] = useState(false);
-//   const [currentUser, setCurrentUser] = useState(null);
+
+  // Middleware-like check for admin authentication
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!firebase.user) {
+        navigate("/login"); // Redirect to login if not authenticated
+        return;
+      }
+      const adminEmail = "rk399504@gmail.com"; // Define admin email
+      if (firebase.user.email !== adminEmail) {
+        alert("You are not authorized to access this page.");
+        navigate("/"); // Redirect to home if not an admin
+        return;
+      }
+    };
+
+    checkAdmin();
+  }, [firebase.user, navigate]);
 
   // Fetch users when component mounts
   useEffect(() => {
     const fetchUsers = async () => {
-      const fetchedUsers = await firebase.listAllUsers(); // Assuming firebase.listUsers() is fetching the user data
-      console.log("Fetched users:", fetchedUsers);
-      setUsers(fetchedUsers); // Set fetched users to state
+      try {
+        const fetchedUsers = await firebase.listAllUsers(); // Fetch user data
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
 
     fetchUsers();
   }, [firebase]);
 
   // Filter users into admin and non-admin
-  const adminUsers = users.filter(user => user.isAdmin);
-  const nonAdminUsers = users.filter(user => !user.isAdmin);
+  const adminUsers = users.filter((user) => user.isAdmin);
+  const nonAdminUsers = users.filter((user) => !user.isAdmin);
 
   // Handle adding a new user
   const handleAddUser = async () => {
     try {
       await firebase.addUser({ email, isAdmin });
-      setEmail(""); // Clear input after adding
+      setEmail("");
       setIsAdmin(false);
-      setShowModal(false); // Close modal
-      // Re-fetch users
-      const fetchedUsers = await firebase.listAllUsers();
+      setShowModal(false);
+      const fetchedUsers = await firebase.listAllUsers(); // Re-fetch users
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Error adding user:", error);
@@ -42,9 +63,8 @@ const AdminRoute = () => {
   // Handle deleting a user
   const handleDeleteUser = async (uid) => {
     try {
-      await firebase.deleteUser(uid); // Assume deleteUser deletes a user by UID
-      // Re-fetch users
-      const fetchedUsers = await firebase.listAllUsers();
+      await firebase.deleteUser(uid);
+      const fetchedUsers = await firebase.listAllUsers(); // Re-fetch users
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -54,9 +74,8 @@ const AdminRoute = () => {
   // Handle setting a user as admin
   const handleSetAsAdmin = async (uid) => {
     try {
-      await firebase.setUserAdmin(uid, true); // Assume setUserAdmin makes a user an admin
-      // Re-fetch users
-      const fetchedUsers = await firebase.listAllUsers();
+      await firebase.setUserAdmin(uid, true);
+      const fetchedUsers = await firebase.listAllUsers(); // Re-fetch users
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Error setting user as admin:", error);
@@ -66,9 +85,8 @@ const AdminRoute = () => {
   // Handle removing admin from a user
   const handleRemoveAdmin = async (uid) => {
     try {
-      await firebase.setUserAdmin(uid, false); // Assume setUserAdmin removes admin status
-      // Re-fetch users
-      const fetchedUsers = await firebase.listAllUsers();
+      await firebase.setUserAdmin(uid, false);
+      const fetchedUsers = await firebase.listAllUsers(); // Re-fetch users
       setUsers(fetchedUsers);
     } catch (error) {
       console.error("Error removing admin:", error);
@@ -87,7 +105,10 @@ const AdminRoute = () => {
         ) : (
           <ul>
             {adminUsers.map((user) => (
-              <li key={user.uid} className="flex justify-between items-center py-2 px-4 bg-gray-100 mb-2 rounded-md">
+              <li
+                key={user.uid}
+                className="flex justify-between items-center py-2 px-4 bg-gray-100 mb-2 rounded-md"
+              >
                 <div>
                   <p>{user.email}</p>
                   <p className="text-sm text-gray-500">Status: Admin</p>
@@ -120,7 +141,10 @@ const AdminRoute = () => {
         ) : (
           <ul>
             {nonAdminUsers.map((user) => (
-              <li key={user.uid} className="flex justify-between items-center py-2 px-4 bg-gray-100 mb-2 rounded-md">
+              <li
+                key={user.uid}
+                className="flex justify-between items-center py-2 px-4 bg-gray-100 mb-2 rounded-md"
+              >
                 <div>
                   <p>{user.email}</p>
                   <p className="text-sm text-gray-500">Status: Non-Admin</p>
